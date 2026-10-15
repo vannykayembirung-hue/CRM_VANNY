@@ -266,12 +266,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp DESC);
 export const VERCEL_JSON_CONFIG = `{
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite",
-  "env": {
-    "DATABASE_URL": "@neon_database_url",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key",
-    "CLERK_SECRET_KEY": "@clerk_secret_key"
-  }
+  "framework": "vite"
 }`;
 
 export const PRISMA_SCHEMA = `// prisma/schema.prisma

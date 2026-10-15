@@ -32,18 +32,13 @@ import {
 } from './seedData';
 
 interface StoreContextType {
-  // Current user & Auth (Clerk)
+  // Demo session only. This is not authentication or access control.
   currentUser: User;
   setCurrentUserRole: (role: UserRole) => void;
   users: User[];
-  clerkPublishableKey: string;
-  setClerkPublishableKey: (key: string) => void;
 
-  // Neon DB Config
-  neonDatabaseUrl: string;
-  setNeonDatabaseUrl: (url: string) => void;
+  // This front-end has no Neon connection; false until a real backend health check exists.
   isNeonConnected: boolean;
-  setIsNeonConnected: (connected: boolean) => void;
 
   // Settings
   storeSettings: StoreSettings;
@@ -145,17 +140,26 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | null>(null);
 
 const STORAGE_KEY = 'saveurs_terroirs_crm_db_v1';
+const STORAGE_KEYS = [
+  'settings',
+  'categories',
+  'products',
+  'batches',
+  'movements',
+  'suppliers',
+  'customers',
+  'invoices',
+  'pos',
+  'sales',
+  'audit',
+  'trash',
+].map((suffix) => `${STORAGE_KEY}_${suffix}`);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load initial state from local storage or fallback to seed
   const [currentUser, setCurrentUser] = useState<User>(() => INITIAL_USERS[0]);
-  const [clerkPublishableKey, setClerkPublishableKey] = useState<string>(
-    'pk_test_Y2xlcmsuZXBpY2VyaWUtZmluZS5kZXYk'
-  );
-  const [neonDatabaseUrl, setNeonDatabaseUrl] = useState<string>(
-    'postgresql://neondb_owner:npg_xY8a9KzWqL21@ep-sweet-glade-a2y9k0e8.eu-central-1.aws.neon.tech/neondb?sslmode=require'
-  );
-  const [isNeonConnected, setIsNeonConnected] = useState<boolean>(true);
+  // No database connection is implemented in this browser-only prototype.
+  const isNeonConnected = false;
 
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_settings`);
@@ -259,7 +263,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role,
     };
     setCurrentUser(found);
-    addAuditLog('update', 'user', found.id, `Changement de rôle session vers ${role.toUpperCase()}`);
+    addAuditLog('update', 'user', found.id, `Changement de rôle de démonstration vers ${role.toUpperCase()}`);
   };
 
   const updateStoreSettings = (updates: Partial<StoreSettings>) => {
@@ -1036,7 +1040,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetToSeeds = () => {
-    localStorage.clear();
+    STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     setStoreSettings(INITIAL_STORE_SETTINGS);
     setCategories(INITIAL_CATEGORIES);
     setProducts(INITIAL_PRODUCTS);
@@ -1058,12 +1062,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentUser,
         setCurrentUserRole,
         users: INITIAL_USERS,
-        clerkPublishableKey,
-        setClerkPublishableKey,
-        neonDatabaseUrl,
-        setNeonDatabaseUrl,
         isNeonConnected,
-        setIsNeonConnected,
         storeSettings,
         updateStoreSettings,
         categories,

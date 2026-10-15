@@ -4,7 +4,7 @@ import { UserRole } from '../types';
 import {
   Store,
   Database,
-  ShieldCheck,
+  UserRound,
   RotateCcw,
   Plus,
   ShoppingBag,
@@ -56,8 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="block text-base font-bold tracking-tight text-neutral-900 leading-none">
               {storeSettings.name}
             </span>
-            <span className="text-xs text-neutral-500 font-normal">
-              Épicerie Fine & Bio · Lyon
+            <span className="text-[10px] text-rose-700 font-semibold">
+              MODE DÉMO · Ne pas saisir de données réelles
             </span>
           </div>
         </button>
@@ -102,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* Zone 3: Clerk Auth Role Switcher & Neon DB Status */}
+      {/* Zone 3: Demo role selector & Neon DB status */}
       <div className="flex items-center gap-3">
         {/* Neon Database status button */}
         <button
@@ -115,15 +115,15 @@ export const Header: React.FC<HeaderProps> = ({
           <span className={`h-1.5 w-1.5 rounded-full ${isNeonConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
         </button>
 
-        {/* Clerk Auth Switcher */}
+        {/* Demo role switcher — not authentication or authorization */}
         <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50/70 p-1 pl-2">
-          <ShieldCheck className="h-4 w-4 text-neutral-600" />
+          <UserRound className="h-4 w-4 text-neutral-600" />
           <div className="text-left hidden lg:block">
             <div className="text-xs font-semibold text-neutral-900 leading-tight">
               {currentUser.name}
             </div>
             <div className="text-[10px] text-neutral-500 leading-tight">
-              Clerk Auth
+              Session démo
             </div>
           </div>
           <select
