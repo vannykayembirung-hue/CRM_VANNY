@@ -1,0 +1,279 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Store {
+  id               String   @id @default(uuid())
+  name             String
+  brandName        String   @map("brand_name")
+  address          String
+  city             String
+  postalCode       String   @map("postal_code")
+  country          String   @default("France")
+  siret            String
+  vatNumber        String   @map("vat_number")
+  rcs              String
+  apeCode          String   @map("ape_code")
+  capital          String
+  iban             String
+  bic              String
+  defaultVatRate   Decimal  @default(5.50) @map("default_vat_rate")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("stores")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  clerkId          String?  @unique @map("clerk_id")
+  name             String
+  email            String   @unique
+  role             String   @default("caissier") // admin, gerant, caissier, stock, comptable
+  avatarUrl        String?  @map("avatar_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  @@map("users")
+}
+
+model Category {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  products         Product[]
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@map("categories")
+}
+
+model Supplier {
+  id               String          @id @default(uuid())
+  name             String
+  type             String          @default("producteur")
+  contactName      String?         @map("contact_name")
+  email            String?
+  phone            String?
+  address          String?
+  siret            String?
+  vatNumber        String?         @map("vat_number")
+  paymentTermsDays Int             @default(30) @map("payment_terms_days")
+  rating           Int             @default(5)
+  active           Boolean         @default(true)
+  products         Product[]
+  batches          Batch[]
+  purchaseOrders   PurchaseOrder[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  deletedAt        DateTime?       @map("deleted_at")
+
+  @@map("suppliers")
+}
+
+model Product {
+  id                 String          @id @default(uuid())
+  sku                String          @unique
+  name               String
+  description        String?
+  imageUrl           String?         @map("image_url")
+  categoryId         String?         @map("category_id")
+  category           Category?       @relation(fields: [categoryId], references: [id])
+  brand              String?
+  primarySupplierId  String?         @map("primary_supplier_id")
+  supplier           Supplier?       @relation(fields: [primarySupplierId], references: [id])
+  unit               String          @default("piece")
+  unitWeightKg       Decimal?        @map("unit_weight_kg")
+  barcodes           String[]        @default([])
+  priceHt            Decimal         @map("price_ht")
+  vatRate            Decimal         @default(5.50) @map("vat_rate") // 5.5, 10, 20
+  priceTtc           Decimal         @map("price_ttc")
+  purchasePriceHt    Decimal         @map("purchase_price_ht")
+  marginPercent      Decimal         @default(0) @map("margin_percent")
+  pricePerKg         Decimal?        @map("price_per_kg")
+  isWeighable        Boolean         @default(false) @map("is_weighable")
+  isBio              Boolean         @default(false) @map("is_bio")
+  isLocal            Boolean         @default(false) @map("is_local")
+  isAop              Boolean         @default(false) @map("is_aop")
+  originCountry      String          @default("France") @map("origin_country")
+  allergens          String[]        @default([])
+  dlcDdmDefaultDays  Int             @default(30) @map("dlc_ddm_default_days")
+  minStock           Decimal         @default(5) @map("min_stock")
+  maxStock           Decimal         @default(50) @map("max_stock")
+  reorderPoint       Decimal         @default(10) @map("reorder_point")
+  hasBatchManagement Boolean         @default(true) @map("has_batch_management")
+  currentStock       Decimal         @default(0) @map("current_stock")
+  active             Boolean         @default(true)
+  version            Int             @default(1)
+  batches            Batch[]
+  movements          StockMovement[]
+  invoiceLines       InvoiceLine[]
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  deletedAt          DateTime?       @map("deleted_at")
+
+  @@map("products")
+}
+
+model Batch {
+  id               String          @id @default(uuid())
+  productId        String          @map("product_id")
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batchNumber      String          @map("batch_number")
+  receptionDate    DateTime        @map("reception_date")
+  manufacturingDate DateTime?      @map("manufacturing_date")
+  dlcDate          DateTime        @map("dlc_date")
+  ddmDate          DateTime?       @map("ddm_date")
+  initialQuantity  Decimal         @map("initial_quantity")
+  currentQuantity  Decimal         @map("current_quantity")
+  unit             String
+  locationId       String?         @map("location_id")
+  supplierId       String?         @map("supplier_id")
+  supplier         Supplier?       @relation(fields: [supplierId], references: [id])
+  purchaseOrderRef String?         @map("purchase_order_ref")
+  purchasePriceHt  Decimal         @map("purchase_price_ht")
+  status           String          @default("conforme")
+  notes            String?
+  movements        StockMovement[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  deletedAt        DateTime?       @map("deleted_at")
+
+  @@map("batches")
+}
+
+model StockMovement {
+  id             String    @id @default(uuid())
+  type           String    // entree, sortie, perte_casse, peremption, ajustement, transfert
+  productId      String    @map("product_id")
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productName    String    @map("product_name")
+  batchId        String?   @map("batch_id")
+  batch          Batch?    @relation(fields: [batchId], references: [id])
+  batchNumber    String?   @map("batch_number")
+  quantity       Decimal
+  unit           String
+  unitPriceHt    Decimal   @map("unit_price_ht")
+  totalValueHt   Decimal   @map("total_value_ht")
+  reason         String
+  referenceDoc   String?   @map("reference_doc")
+  sourceLocation String?   @map("source_location")
+  targetLocation String?   @map("target_location")
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("stock_movements")
+}
+
+model Customer {
+  id             String    @id @default(uuid())
+  type           String    @default("particulier") // particulier, professionnel
+  name           String
+  firstName      String?   @map("first_name")
+  companyName    String?   @map("company_name")
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  postalCode     String?   @map("postal_code")
+  siret          String?
+  vatNumber      String?   @map("vat_number")
+  loyaltyPoints  Int       @default(0) @map("loyalty_points")
+  loyaltyTier    String    @default("Bronze") @map("loyalty_tier")
+  totalSpent     Decimal   @default(0) @map("total_spent")
+  notes          String?
+  active         Boolean   @default(true)
+  invoices       Invoice[]
+  createdAt      DateTime  @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@map("customers")
+}
+
+model Invoice {
+  id                 String        @id @default(uuid())
+  invoiceNumber      String        @unique @map("invoice_number")
+  type               String        @default("facture") // facture, avoir, acompte, devis
+  originalInvoiceId  String?       @map("original_invoice_id")
+  customerId         String        @map("customer_id")
+  customer           Customer      @relation(fields: [customerId], references: [id])
+  customerName       String        @map("customer_name")
+  customerAddress    String        @map("customer_address")
+  customerSiret      String?       @map("customer_siret")
+  customerVatNumber  String?       @map("customer_vat_number")
+  issueDate          DateTime      @map("issue_date")
+  dueDate            DateTime      @map("due_date")
+  subtotalHt         Decimal       @map("subtotal_ht")
+  discountTotal      Decimal       @default(0) @map("discount_total")
+  shippingCostHt     Decimal       @default(0) @map("shipping_cost_ht")
+  vatBreakdown       Json          @default("[]") @map("vat_breakdown")
+  totalTtc           Decimal       @map("total_ttc")
+  paidAmount         Decimal       @default(0) @map("paid_amount")
+  paymentStatus      String        @default("brouillon") @map("payment_status")
+  paymentMethod      String        @default("Virement bancaire SEPA") @map("payment_method")
+  paymentTerms       String?       @map("payment_terms")
+  legalMentions      String?       @map("legal_mentions")
+  isLocked           Boolean       @default(false) @map("is_locked")
+  notes              String?
+  history            Json          @default("[]")
+  lines              InvoiceLine[]
+  createdAt          DateTime      @default(now()) @map("created_at")
+  deletedAt          DateTime?     @map("deleted_at")
+
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id              String   @id @default(uuid())
+  invoiceId       String   @map("invoice_id")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId       String?  @map("product_id")
+  product         Product? @relation(fields: [productId], references: [id])
+  description     String
+  quantity        Decimal
+  unit            String
+  unitPriceHt     Decimal  @map("unit_price_ht")
+  vatRate         Decimal  @map("vat_rate")
+  discountPercent Decimal  @default(0) @map("discount_percent")
+  totalHt         Decimal  @map("total_ht")
+  totalTtc        Decimal  @map("total_ttc")
+
+  @@map("invoice_lines")
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(uuid())
+  orderNumber          String              @unique @map("order_number")
+  supplierId           String              @map("supplier_id")
+  supplier             Supplier            @relation(fields: [supplierId], references: [id])
+  supplierName         String              @map("supplier_name")
+  orderDate            DateTime            @map("order_date")
+  expectedDeliveryDate DateTime            @map("expected_delivery_date")
+  status               String              @default("confirme")
+  subtotalHt           Decimal             @map("subtotal_ht")
+  totalVat             Decimal             @map("total_vat")
+  totalTtc             Decimal             @map("total_ttc")
+  createdBy            String              @map("created_by")
+  lines                PurchaseOrderLine[]
+  createdAt            DateTime            @default(now()) @map("created_at")
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id               String        @id @default(uuid())
+  purchaseOrderId  String        @map("purchase_order_id")
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId        String        @map("product_id")
+  productName      String        @map("product_name")
+  quantityOrdered  Decimal       @map("quantity_ordered")
+  quantityReceived Decimal       @default(0) @map("quantity_received")
+  unit             String
+  unitPriceHt      Decimal       @map("unit_price_ht")
+  vatRate          Decimal       @map("vat_rate")
+  totalHt          Decimal       @map("total_ht")
+
+  @@map("purchase_order_lines")
+}

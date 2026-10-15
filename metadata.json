@@ -1,0 +1,6 @@
+{
+  "name": "Saveurs & Terroirs - CRM Épicerie Fine",
+  "description": "CRM & ERP complet pour boutique d'alimentation : gestion des stocks par lots avec DLC/DDM, entrées/sorties avec graphiques, caisse tactile POS, facturation légale française et base Neon / Clerk.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
